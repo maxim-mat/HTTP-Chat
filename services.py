@@ -2,6 +2,7 @@ import base
 import constants
 import os
 import time
+import urlparse
 
 
 class Service(object):
@@ -92,6 +93,41 @@ class Cute(base.Base, Service):
     def response_headers(self, dialogue):
         dialogue['response']['headers']['Content-Length'] = os.fstat(self.resource.fileno()).st_size
         dialogue['response']['headers']['Content-Type'] = 'image/jpeg'
+
+    def response_content(self, dialogue):
+        dialogue['response']['content'] = self.resource.read(constants.BUFFER_LIMIT)
+
+    def on_end(self, dialogue):
+        self.resource.close()
+
+class Chat(base.Base, Service):
+
+    NAME = '/chat'
+
+    def __init__(
+        self,
+    ):
+        super(Chat, self).__init__()
+        Service.__init__(self)
+        self._resource = None
+        self._content = ''
+
+    @property
+    def resource(self):
+        return self._resource
+
+    @resource.setter
+    def resource(self, val):
+        self._resource = val
+
+    def response_first_line(self, dialogue):
+        dialogue['response']['code'] = '200'
+        dialogue['response']['message'] = 'OK'
+        self.resource = open('chat.html', 'rb')
+
+    def response_headers(self, dialogue):
+        dialogue['response']['headers']['Content-Length'] = os.fstat(self.resource.fileno()).st_size
+        dialogue['response']['headers']['Content-Type'] = 'text/html'
 
     def response_content(self, dialogue):
         dialogue['response']['content'] = self.resource.read(constants.BUFFER_LIMIT)

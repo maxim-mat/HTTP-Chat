@@ -89,7 +89,7 @@ class Server(base.Base):
 
     def run(self):
         while self._pollable:
-            print self._pollable
+            self.logger.debug('pollable list: %s', self._pollable)
             try:
                 # if self._close_server:
                     # self._terminate()
@@ -222,6 +222,9 @@ def main():
 
         signal.signal(signal.SIGINT, exit_handler)
         signal.signal(signal.SIGTERM, exit_handler)
+
+        response_context = {}
+        request_context = {}
 
         for a in args.server:
             bind_addr, bind_port = a.split(':')

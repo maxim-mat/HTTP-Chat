@@ -82,7 +82,6 @@ class HttpSocket(base.Base, Pollable):
     _services = {
         service.NAME: service for service in services.Service.__subclasses__()
     }
-    _lookup = ['Content-Type', ]
 
     def __init__(
         self,
@@ -201,9 +200,7 @@ class HttpSocket(base.Base, Pollable):
                 raise
 
     def onerror(self):
-        self.poller.unregister(self)
-        self.logger.debug('removed and closed active socket %s', self.getfd())
-        self.socket.close()
+        self._terminate()
 
     def _parse_header(self, line):
         SEP = ':'
@@ -226,7 +223,8 @@ class HttpSocket(base.Base, Pollable):
                 uri,
             )
         self.dialogue['request']['method'] = method
-        self.dialogue['request']['uri'] = uri
+        self.dialogue['request']['uri'] = parsed.path
+        self.dialogue['request']['query'] = parsed.query
         self.service = self._services[parsed.path]()
         self.logger.debug('validated protocol')
 
@@ -282,9 +280,7 @@ class HttpSocket(base.Base, Pollable):
                 self.logger.debug('CHANGED STATE TO: %s', self.state)
         if self.state == HttpSocket.END:
                 self.service.on_end(self.dialogue)
-                self.poller.unregister(self)
-                self.logger.debug('ended communication and closed socket %s', self.getfd())
-                self.socket.close()
+                self._terminate()
 
     def _format_first_line(self):
         self.outgoing += (
@@ -311,6 +307,11 @@ class HttpSocket(base.Base, Pollable):
 
     def _format_content(self):
         self.outgoing += self.dialogue['response']['content']
+
+    def _terminate(self):
+        self.poller.unregister(self)
+        self.logger.debug('ended communication and closed socket %s', self.getfd())
+        self.socket.close()
 
     # def _handle_buffer(self):
         # while self.buf:
