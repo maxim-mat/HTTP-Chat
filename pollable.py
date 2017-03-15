@@ -35,11 +35,13 @@ class SocketListen(base.Base, Pollable):
         socket,
         ret_class,
         poller,
+        context,
     ):
         super(SocketListen, self).__init__()
         self._socket = socket
         self._ret_class = ret_class
         self._poller = poller
+        self._context = context
 
     @property
     def socket(self):
@@ -52,6 +54,10 @@ class SocketListen(base.Base, Pollable):
     @property
     def poller(self):
         return self._poller
+
+    @property
+    def context(self):
+        return self._context
 
     def getfd(self):
         return self.socket.fileno()
@@ -68,7 +74,7 @@ class SocketListen(base.Base, Pollable):
         except Exception as e:
             self.logger.error('Unexpected error: %s', exc_info=True)
             client.close()
-        self.poller.register(self.ret_class(client, self.poller))
+        self.poller.register(self.ret_class(client, self.poller, self.context))
 
     def onerror(self):
         self.poller.unregister(self)
@@ -87,12 +93,14 @@ class HttpSocket(base.Base, Pollable):
         self,
         socket,
         poller,
+        context,
         block_size=constants.BLOCK_SIZE,
     ):
         super(HttpSocket, self).__init__()
         self._socket = socket
         self._poller = poller
         self._block_size = block_size
+        self._context = context
         self._buf = ''
         self._state = HttpSocket.FIRST
         self._outgoing = ''
@@ -102,13 +110,13 @@ class HttpSocket(base.Base, Pollable):
                     'Content-Length':0,
                 },
                 'content': '',
+                'context': self._context,
             },
             'response': {
                 'headers': {
                     
                 },
                 'signature': constants.HTTP_SIGNATURE,
-                'state': False,
             },
         }
         self._service = None
@@ -124,6 +132,10 @@ class HttpSocket(base.Base, Pollable):
     @block_size.setter
     def block_size(self, val):
         self._block_size = val
+
+    @property
+    def context(self):
+        return self._context
 
     @property
     def buf(self):
@@ -191,7 +203,7 @@ class HttpSocket(base.Base, Pollable):
                 raise RuntimeError('Exceeded maximum header length %s' % constants.MAX_HEADER_LEN)
             temp = self.socket.recv(self.block_size)
             self.logger.debug('received %s', temp)
-            if self.buf and not temp:
+            if not temp:
                 raise Disconnect()
             self.buf += temp
             self._parse()
@@ -252,14 +264,21 @@ class HttpSocket(base.Base, Pollable):
                 line = self.buf[:n].decode('utf-8')
                 title, data = self._parse_header(line)
                 if title in self.dialogue['request']['headers']:
+                    if title == 'Content-Length':
+                        data = int(data)
                     self.dialogue['request']['headers'][title] = data
                 self.buf = self.buf[n + len(constants.CRLF_BIN):]
         if self.state == HttpSocket.CONTENT:
             if self.dialogue['request']['headers']['Content-Length'] > 0:
                 self.dialogue['request']['content'] += self.buf
+                self.logger.debug('put content in context: %s', self.buf)
+                self.logger.debug('actual content is: %s', self.dialogue['request']['content'])
+                self.logger.debug('length before: %s', self.dialogue['request']['headers']['Content-Length'])
+                self.dialogue['request']['headers']['Content-Length'] -= len(self.buf)
+                self.logger.debug('length after: %s', self.dialogue['request']['headers']['Content-Length'])
                 self.buf = ''
                 self.service.on_content(self.dialogue)
-            else:
+            if self.dialogue['request']['headers']['Content-Length'] <= 0:
                 self.state = HttpSocket.R_FIRST
                 self.logger.debug('CHANGED STATE TO: %s', self.state)
         if self.state == HttpSocket.R_FIRST:

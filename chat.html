@@ -17,17 +17,36 @@
 			}
             
             function showTime(){
-                setInterval(getTime, 1000)
+                setInterval(getTime, 1000);
             }
-            
+			
+			function sendMessage(){
+				var data = '<root><message text=' + '"' + message.value + '"' + '/></root>';
+				var parser = new DOMParser();
+				var DOM = parser.parseFromString(data, "text/xml");
+				var xhttp = new XMLHttpRequest();
+				xhttp.onreadystatechange = function(){
+					if(this.readyState == 4 && this.status == 200){
+						document.getElementById("room").innerHTML =
+						this.responseText;
+					}
+				};
+				xhttp.open("POST", "update", true);
+                xhttp.setRequestHeader("Content-type" , "application/xml");
+				xhttp.send(DOM);
+                document.getElementById("message").value = "";
+				return false;
+			}
+			
 		</script>
 	</head>
-	<body onload="showTime()">
+    <!-- onload="showTime()" -->
+	<body>
 		<h1 align="center"><b> PyChat </b></h1><br/>
         <div id="time">
         </div>
 		<div id="room" style="height:400px;width:800px;border:1px solid #ccc;font:16px/26px Georgia, Garamond, Serif;overflow:auto;"></div><br/>
-		<form onsubmit='return new_message()'>
+		<form onsubmit='return sendMessage()'>
 		<select>
 			<option value="1">room1</option>
 			<option value="2">room2</option>

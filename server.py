@@ -224,7 +224,7 @@ def main():
         signal.signal(signal.SIGTERM, exit_handler)
 
         response_context = {}
-        request_context = {}
+        request_context = {'room':[]}
 
         for a in args.server:
             bind_addr, bind_port = a.split(':')
@@ -233,7 +233,7 @@ def main():
             s.bind((bind_addr, bind_port))
             s.listen(10)
             s.setblocking(False)
-            server.register(pollable.SocketListen(s, pollable.HttpSocket, server))
+            server.register(pollable.SocketListen(s, pollable.HttpSocket, server, request_context))
             server.logger.debug(
                 'Created new listener socket %s:%s',
                 bind_addr,
