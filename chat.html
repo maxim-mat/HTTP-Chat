@@ -21,13 +21,13 @@
             }
 			
 			function sendMessage(){
-				var data = '<root><message text=' + '"' + message.value + '"' + '/></root>';
+				var data = '<root><message text=' + '"' + message.value + '"' +'/></root>';
 				var parser = new DOMParser();
 				var DOM = parser.parseFromString(data, "text/xml");
 				var xhttp = new XMLHttpRequest();
 				xhttp.onreadystatechange = function(){
 					if(this.readyState == 4 && this.status == 200){
-						document.getElementById("room").innerHTML =
+						document.getElementById("room").innerHTML +=
 						this.responseText;
 					}
 				};
@@ -38,9 +38,24 @@
 				return false;
 			}
 			
+			function updateMessages(){
+				var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if(this.readyState == 4 && this.status == 200){
+                        document.getElementById("room").innerHTML =
+                        this.responseText;
+                    }
+                };
+                xhttp.open("GET", "update", true);
+                xhttp.send();
+			}
+			
+			function Begin(){
+				setInterval(updateMessages, 500);
+			}
+			
 		</script>
 	</head>
-    <!-- onload="showTime()" -->
 	<body>
 		<h1 align="center"><b> PyChat </b></h1><br/>
         <div id="time">
@@ -51,7 +66,7 @@
 			<option value="1">room1</option>
 			<option value="2">room2</option>
 		</select><br/>
-		Enter your message: <input id='message'><input type="submit" value="Send">
+		Enter your message: <input id='message'><input type="submit" value="Send"><br/>
 		</form>
 	</body>
 </html>

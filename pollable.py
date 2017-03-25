@@ -5,6 +5,7 @@ from events import CommonEvents
 import services
 import socket
 import urlparse
+from server import Disconnect
 
 
 class Pollable(object):
@@ -109,6 +110,7 @@ class HttpSocket(base.Base, Pollable):
                 'headers': {
                     'Content-Length':0,
                 },
+                'name': '',
                 'content': '',
                 'context': self._context,
             },
@@ -117,6 +119,7 @@ class HttpSocket(base.Base, Pollable):
                     
                 },
                 'signature': constants.HTTP_SIGNATURE,
+                'content': '',
             },
         }
         self._service = None
@@ -236,7 +239,7 @@ class HttpSocket(base.Base, Pollable):
             )
         self.dialogue['request']['method'] = method
         self.dialogue['request']['uri'] = parsed.path
-        self.dialogue['request']['query'] = parsed.query
+        self.dialogue['request']['params'] = urlparse.parse_qs(parsed.query)
         self.service = self._services[parsed.path]()
         self.logger.debug('validated protocol')
 
@@ -294,7 +297,7 @@ class HttpSocket(base.Base, Pollable):
         if self.state == HttpSocket.R_CONTENT:
             self.service.response_content(self.dialogue)
             self._format_content()
-            if len(self.dialogue['response']['content']) == 0:
+            if len(self.dialogue['response']['content']) == 0 and not self.outgoing:
                 self.state = HttpSocket.END
                 self.logger.debug('CHANGED STATE TO: %s', self.state)
         if self.state == HttpSocket.END:
@@ -331,56 +334,3 @@ class HttpSocket(base.Base, Pollable):
         self.poller.unregister(self)
         self.logger.debug('ended communication and closed socket %s', self.getfd())
         self.socket.close()
-
-    # def _handle_buffer(self):
-        # while self.buf:
-            # if self.state == HttpSocket.R_FIRST:
-                # self.service.response_first_line(self.dialogue)
-                # self.state = HttpSocket.R_HEADERS
-                # break
-            # if self.state == HttpSocket.R_HEADERS:
-                # self.service.response_headers(self.dialogue)
-                # self.state = HttpSocket.R_CONTENT
-                # self.outgoing = (
-                    # (
-                        # '%s %s %s\r\n'
-                        # '%s: %s\r\n'
-                        # '%s: %s\r\n'
-                        # '\r\n'
-                    # ) % (
-                        # constants.HTTP_SIGNATURE
-                        # self.dialogue['response']['code'],
-                        # self.dialogue['response']['message'],
-                        # 'Content-Length',
-                        # self.dialogue['response']['headers']['Content-Length'],
-                        # 'Content-Type',
-                        # self.dialogue['response']['headers']['Content-Type']
-                    # )
-                # ).encode('utf-8')
-                # self.state = HttpSocket.R_CONTENT
-            # if self.state == HttpSocket.R_CONTENT:
-                # self.service.response_content(self.dialogue)
-                # self.outgoing = self.dialogue['response']['content']
-            # if self.state == HttpSocket.CONTENT:
-                # self.dialogue['request']['content'] += self.buf
-                # self.buf = ''
-                # self.service.on_content(self.dialogue)
-                # if self.dialogue['request']['headers']['Content-Length'] == 0:
-                    # self.state = HttpSocket.R_FIRST
-                    # break
-            # n = self.buf.find(constants.CRLF_BIN)
-            # if n == -1:
-                # break
-            # if n == 0:
-                # self.logger.debug('now content')
-                # self.buf = self.buf[n + len(constants.CRLF_BIN):]
-                # self.state = HttpSocket.CONTENT
-                # break
-            # line = self.buf[:n].decode('utf-8')
-            # if self.state == HttpSocket.FIRST:
-                # self._validate(line)
-            # elif self.state == HttpSocket.HEADERS:
-                # title, data = self._parse_header(line)
-                # if title in self.dialogue['request']['headers']:
-                    # self.dialogue['request']['headers'][title] = data
-            # self.buf = self.buf[n + len(constants.CRLF_BIN):]
