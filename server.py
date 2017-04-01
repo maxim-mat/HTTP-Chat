@@ -166,7 +166,7 @@ def parse_args():
         help='log file to write to. default: standard output',
     )
     parser.add_argument(
-        '--server',
+        '--new',
         action='append',
         required=True,
         help='''server to create. format is:
@@ -224,9 +224,16 @@ def main():
         signal.signal(signal.SIGTERM, exit_handler)
 
         response_context = {}
-        request_context = {'room':[]}
+        request_context = {
+            'users':{
+                
+            },
+            'rooms':{
+                'room':[],
+            },
+        }
 
-        for a in args.server:
+        for a in args.new:
             bind_addr, bind_port = a.split(':')
             bind_port = int(bind_port)
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

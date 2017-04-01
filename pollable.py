@@ -195,6 +195,7 @@ class HttpSocket(base.Base, Pollable):
         try:
             while self._outgoing:
                 self.outgoing = self.outgoing[self.socket.send(self.outgoing):]
+            self.logger.debug('OUTGOING IS STILL%s|', self.outgoing)
             self._parse()
         except socket.error as e:
             if e.errno != errno.EWOULDBLOCK:
