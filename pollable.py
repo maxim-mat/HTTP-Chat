@@ -180,6 +180,11 @@ class HttpSocket(base.Base, Pollable):
     def poller(self):
         return self._poller
 
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return NotImplemented
+        return self.getfd() == other.getfd()
+
     def getfd(self):
         return self.socket.fileno()
 
@@ -195,7 +200,6 @@ class HttpSocket(base.Base, Pollable):
         try:
             while self._outgoing:
                 self.outgoing = self.outgoing[self.socket.send(self.outgoing):]
-            self.logger.debug('OUTGOING IS STILL%s|', self.outgoing)
             self._parse()
         except socket.error as e:
             if e.errno != errno.EWOULDBLOCK:

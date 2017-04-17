@@ -60,8 +60,10 @@ class Server(base.Base):
 
     def register(self, object):
         self._pollable.append(object)
+        self.logger.debug('registered %s', object)
 
     def unregister(self, object):
+        self.logger.debug('removed %s', object)
         self._pollable.remove(object)
 
     def _create_poller(self):

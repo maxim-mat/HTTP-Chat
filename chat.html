@@ -42,21 +42,27 @@
 				var xhttp = new XMLHttpRequest();
                 xhttp.onreadystatechange = function() {
                     if(this.readyState == 4 && this.status == 200){
-                        document.getElementById("room").innerHTML =
-                        this.responseText;
-                    }
+						var response = this.responseXML;
+						for(var msg in response.getElementsByTagName('message')){
+							alert('3');
+							alert(msg);
+							document.getElementById("room").innerHTML +=
+							msg.childNodes[0].nodeValue;
+							alert(msg.childNodes[0].nodeValue)
+						}
+					}
                 };
                 xhttp.open("GET", "update", true);
                 xhttp.send();
 			}
 			
 			function Begin(){
-				setInterval(updateMessages, 500);
+				setInterval(updateMessages, 100);
 			}
 			
 		</script>
 	</head>
-	<body>
+	<body onload='Begin()'>
 		<h1 align="center"><b> PyChat </b></h1><br/>
         <div id="time">
         </div>

@@ -199,15 +199,23 @@ class Update(base.Base, Service):
         dialogue['response']['code'] = '200'
         dialogue['response']['message'] = 'OK'
         if dialogue['request']['method'] == 'POST':
+            c = Cookie.SimpleCookie()
+            c.load(str(dialogue['request']['headers']['Cookie']))
             root = et.fromstring(dialogue['request']['content'])
-            dialogue['request']['context']['rooms']['room'].append(root[0].attrib['text'])
+            dialogue['request']['context']['rooms']['room'].append('%s: %s' % (dialogue['request']['context']['users'][c['uid'].value]['name'], root[0].attrib['text']))
 
     def response_headers(self, dialogue):
         c = Cookie.SimpleCookie()
         c.load(str(dialogue['request']['headers']['Cookie']))
-        self.content = '<html><body>%s: %s</body></html><br/>' % (dialogue['request']['context']['users'][c['uid'].value] , util.get_last_element(dialogue['request']['context']['rooms']['room']))
+        messages = util.get_revision(dialogue['request']['context']['rooms']['room'], dialogue['request']['context']['users'][c['uid'].value]['revision'])
+        root = et.Element('root')
+        for entry in messages:
+            et.SubElement(root, 'message').text = entry
+        self.logger.debug('HERE BE THE MESSAGES: %s', et.tostring(root))
+        if self.content:
+            dialogue['request']['context']['users'][c['uid'].value]['revision'] = len(dialogue['request']['context']['rooms']['room'])
         dialogue['response']['headers']['Content-Length'] = len(self.content)
-        dialogue['response']['headers']['Content-Type'] = 'text/html'
+        dialogue['response']['headers']['Content-Type'] = 'text/xml'
         dialogue['response']['headers']['Cookie'] = dialogue['request']['headers']['Cookie']
 
     def response_content(self, dialogue):
@@ -233,20 +241,29 @@ class Home(base.Base, Service):
     def resource(self, val):
         self._resource = val
 
+    def on_headers(self, dialogue):
+        dialogue['request']['headers']['Cookie'] = ''
+
     def response_first_line(self, dialogue):
         dialogue['response']['code'] = '200'
         dialogue['response']['message'] = 'OK'
-        self.resource = open('home.html', 'rb')
+        if not dialogue['request']['headers']['Cookie']:
+            self.resource = open('home.html', 'rb')
 
     def response_headers(self, dialogue):
-        dialogue['response']['headers']['Content-Length'] = os.fstat(self.resource.fileno()).st_size
-        dialogue['response']['headers']['Content-Type'] = 'text/html'
+        if not dialogue['request']['headers']['Cookie']:
+            dialogue['response']['headers']['Content-Length'] = os.fstat(self.resource.fileno()).st_size
+            dialogue['response']['headers']['Content-Type'] = 'text/html'
+        else:
+            dialogue['response']['headers']['Refresh'] = '0; url=http://localhost:8080/chat'
 
     def response_content(self, dialogue):
-        dialogue['response']['content'] = self.resource.read(constants.BUFFER_LIMIT)
+        if not dialogue['request']['headers']['Cookie']:
+            dialogue['response']['content'] = self.resource.read(constants.BUFFER_LIMIT)
 
     def on_end(self, dialogue):
-        self.resource.close()
+        if not dialogue['request']['headers']['Cookie']:
+            self.resource.close()
 
 class Login(base.Base, Service):
 
@@ -276,8 +293,7 @@ class Login(base.Base, Service):
     def response_headers(self, dialogue):
         c = Cookie.SimpleCookie()
         c['uid'] = util.generate_unique(dialogue['request']['context']['users'].keys())
-        dialogue['request']['context']['users'][c['uid'].value] = dialogue['request']['params']['name'][0]
-        print dialogue['request']['context']
-        dialogue['response']['headers']['Refresh'] = '0; url=http://localhost:8080/chat'
+        dialogue['request']['context']['users'][c['uid'].value] = {'name': dialogue['request']['params']['name'][0], 'revision': len(dialogue['request']['context']['rooms']['room'])}
         dialogue['response']['headers']['Set-Cookie'] = '%s=%s' % (c['uid'].key, c['uid'].value)
+        dialogue['response']['headers']['Refresh'] = '0; url=http://localhost:8080/chat'
 

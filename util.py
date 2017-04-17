@@ -1,18 +1,20 @@
 import constants
-import random
+import os
+import base64
 
-def get_last_element(list):
+def get_revision(list, index):
 
-    if len(list) > 0:
-        return list[-1]
+    if len(list) == 0 or len(list) == index:
+        return []
+    else:
+        return list[index:]
 
-def generate_unique(excluded, boundaries=constants.BOUNDARIES):
+def generate_unique(excluded):
 
     ''' Generate unique random number '''
-    ''' boundaries is tuple with upper and lower generation boundary, '''
     ''' excluded is iterable with blacklisted outputs '''
 
     while True:
-        num = random.randint(boundaries[0], boundaries[1])
+        num = base64.b64encode(os.urandom(16))
         if num not in excluded:
             return num
