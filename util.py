@@ -4,7 +4,7 @@ import base64
 
 def get_revision(list, index):
 
-    if len(list) == 0 or len(list) == index:
+    if len(list) == 0 or len(list) <= index:
         return []
     else:
         return list[index:]
