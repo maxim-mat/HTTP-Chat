@@ -199,6 +199,7 @@ class HttpSocket(base.Base, Pollable):
     def onwrite(self):
         try:
             while self._outgoing:
+                self.logger.debug('SENDING: %s', self.outgoing)
                 self.outgoing = self.outgoing[self.socket.send(self.outgoing):]
             self._parse()
         except socket.error as e:

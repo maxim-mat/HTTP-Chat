@@ -198,22 +198,26 @@ class Update(base.Base, Service):
     def response_first_line(self, dialogue):
         dialogue['response']['code'] = '200'
         dialogue['response']['message'] = 'OK'
-        if dialogue['request']['method'] == 'POST':
-            c = Cookie.SimpleCookie()
-            c.load(str(dialogue['request']['headers']['Cookie']))
-            root = et.fromstring(dialogue['request']['content'])
-            dialogue['request']['context']['rooms']['room'].append('%s: %s' % (dialogue['request']['context']['users'][c['uid'].value]['name'], root[0].attrib['text']))
+        c = Cookie.SimpleCookie()
+        c.load(str(dialogue['request']['headers']['Cookie']))
+        root = et.fromstring(dialogue['request']['content'])
+        try:
+            dialogue['request']['context']['rooms']['room'].append('%s: %s' % (dialogue['request']['context']['users'][c['uid'].value], root[0].attrib['text']))
+        except Exception as e:
+            pass
 
     def response_headers(self, dialogue):
         c = Cookie.SimpleCookie()
         c.load(str(dialogue['request']['headers']['Cookie']))
-        messages = util.get_revision(dialogue['request']['context']['rooms']['room'], dialogue['request']['context']['users'][c['uid'].value]['revision'])
+        root = et.fromstring(dialogue['request']['content'])
+        messages = util.get_revision(dialogue['request']['context']['rooms']['room'], int(root[0].attrib['revision']))
         root = et.Element('root')
         for entry in messages:
             et.SubElement(root, 'message').text = entry
+        if messages:
+            et.SubElement(root, 'revision').text = '%s' % (len(dialogue['request']['context']['rooms']['room']))
         self.logger.debug('HERE BE THE MESSAGES: %s', et.tostring(root))
-        if self.content:
-            dialogue['request']['context']['users'][c['uid'].value]['revision'] = len(dialogue['request']['context']['rooms']['room'])
+        self.content = et.tostring(root)
         dialogue['response']['headers']['Content-Length'] = len(self.content)
         dialogue['response']['headers']['Content-Type'] = 'text/xml'
         dialogue['response']['headers']['Cookie'] = dialogue['request']['headers']['Cookie']
@@ -286,14 +290,14 @@ class Login(base.Base, Service):
         self._resource = val
 
     def response_first_line(self, dialogue):
-        self.logger.debug("USER NAME IS: %s", dialogue['request']['params']['name'][0])
+        self.logger.debug("NEW USER CONNECTED: %s", dialogue['request']['params']['name'][0])
         dialogue['response']['code'] = '200'
         dialogue['response']['message'] = 'OK'
 
     def response_headers(self, dialogue):
         c = Cookie.SimpleCookie()
         c['uid'] = util.generate_unique(dialogue['request']['context']['users'].keys())
-        dialogue['request']['context']['users'][c['uid'].value] = {'name': dialogue['request']['params']['name'][0], 'revision': len(dialogue['request']['context']['rooms']['room'])}
+        dialogue['request']['context']['users'][c['uid'].value] = dialogue['request']['params']['name'][0]
         dialogue['response']['headers']['Set-Cookie'] = '%s=%s' % (c['uid'].key, c['uid'].value)
         dialogue['response']['headers']['Refresh'] = '0; url=http://localhost:8080/chat'
 

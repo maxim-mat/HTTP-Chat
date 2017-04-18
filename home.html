@@ -4,27 +4,24 @@
 		<title>	 Welcome !</title>
 		<script>
 			
-			function sendUsr(){
-				var data = '<root><message text=' + '"' + user.value + '"' +'/></root>';
-				var parser = new DOMParser();
-				var DOM = parser.parseFromString(data, "text/xml");
-				var xhttp = new XMLHttpRequest();
-				xhttp.onreadystatechange = function(){
-					if(this.readyState == 4 && this.status == 200){
-						Proceed();
-					}
-				};
-				xhttp.open("POST", 'chat', true);
-				xhttp.setRequestHeader("Content-type" , "application/xml");
-				xhttp.send(DOM);
-				return false;
-			}
+			function escapeHtml(unsafe) {
+                return unsafe
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
+            }
+            
+            function validate(){
+                document.getElementById("user").value = escapeHtml(document.getElementById("user").value);
+            }
 			
 		</script>
 	</head>
 	<body>
 		<h1 align="center"><b>Welcome !</b></h1>
-		<form action="/login">
+		<form  autocomplete='off' action="/login" onsubmit='validate()'>
             <input id='user' name='name'><input type='submit' value='register' />
         </form>
 	</body>
