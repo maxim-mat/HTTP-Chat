@@ -1,29 +1,14 @@
 <!DOCTYPE HTML>
 <html>
-	<head>
-		<title> PyChat </title>
-		<script>
-            
+    <head>
+        <title> PyChat </title>
+        <script>
+
             var revision = '0';
-            var repeater = setInterval(updateMessages, 1000);
             var to_update = true;
-            
-			function getTime(){
-				var xhttp = new XMLHttpRequest();
-                xhttp.onreadystatechange = function() {
-                    if(this.readyState == 4 && this.status == 200){
-                        document.getElementById("time").innerHTML =
-                        this.responseText;
-                    }
-                };
-                xhttp.open("GET", "clock", true);
-                xhttp.send();
-			}
-            
-            function showTime(){
-                setInterval(getTime, 1000);
-            }
-            
+            var outgoing = [];
+            var flush = setInterval(flushMessages, 1000);
+
             function escapeHtml(unsafe) {
                 return unsafe
                      .replace(/&/g, "&amp;")
@@ -32,93 +17,124 @@
                      .replace(/"/g, "&quot;")
                      .replace(/'/g, "&#039;");
             }
-			
-			function sendMessage(){
-                to_update = false;
-                clearInterval(repeater);
-				var base = '<root></root>';
-				var parser = new DOMParser();
-				var DOM = parser.parseFromString(base, "text/xml");
-                var node = DOM.createElement("message");
-                var newText = DOM.createAttribute("text");
-                var newRev = DOM.createAttribute("revision");
-                newText.nodeValue = escapeHtml(document.getElementById("message").value);
-                newRev.nodeValue = revision;
-                node.setAttributeNode(newText);
-                node.setAttributeNode(newRev);
+
+            function flushMessages(){
+                var base = '<root></root>';
+                var parser = new DOMParser();
+                var DOM = parser.parseFromString(base, "text/xml");
+                var batch = DOM.createElement("messages");
                 var elements = DOM.getElementsByTagName("root");
-                elements[0].appendChild(node);
-				var xhttp = new XMLHttpRequest();
-				xhttp.onreadystatechange = function(){
-					if(this.readyState == 4 && this.status == 200){
-						var response = this.responseXML;
-						for(var i = 0; i < response.getElementsByTagName('message').length; i++){
-							document.getElementById("room").innerHTML +=
-							response.getElementsByTagName('message')[i].childNodes[0].nodeValue + '<br>';
-						}
-                        revision = response.getElementsByTagName('revision')[0].childNodes[0].nodeValue;
-                        repeater = setInterval(updateMessages, 1000);
-                        to_update = true;
-					}
-				};
-				xhttp.open("POST", "update", true);
-                xhttp.setRequestHeader("Content-type" , "application/xml");
-				xhttp.send(DOM);
-                document.getElementById("message").value = "";
-				return false;
-			}
-			
-			function updateMessages(){
-                if(to_update){
-                    var base = '<root></root>';
-                    var parser = new DOMParser();
-                    var DOM = parser.parseFromString(base, "text/xml");
+                var fetch = DOM.createElement("fetch");
+                elements[0].appendChild(fetch);
+                var id = DOM.createAttribute("id");
+                id.nodeValue = revision;
+                fetch.setAttributeNode(id);
+                elements[0].appendChild(batch);
+                batch = DOM.getElementsByTagName("messages");
+                for(var i = 0; i < outgoing.length; i++){
                     var node = DOM.createElement("message");
-                    var newRev = DOM.createAttribute("revision");
-                    newRev.nodeValue = revision;
-                    node.setAttributeNode(newRev);
-                    var elements = DOM.getElementsByTagName("root");
-                    elements[0].appendChild(node);
-                    var xhttp = new XMLHttpRequest();
-                    xhttp.onreadystatechange = function() {
-                        if(this.readyState == 4 && this.status == 200){
-                            var response = this.responseXML;
-                            for(var i = 0; i < response.getElementsByTagName('message').length; i++){
-                                document.getElementById("room").innerHTML +=
-                                response.getElementsByTagName('message')[i].childNodes[0].nodeValue + '<br>';
-                            }
-                            if(!( response.getElementsByTagName('revision').length == 0 )){
-                                revision = response.getElementsByTagName('revision')[0].childNodes[0].nodeValue;
-                            }
-                        }
-                    };
-                    xhttp.open("POST", "update", true);
-                    xhttp.setRequestHeader("Content-type" , "application/xml");
-                    xhttp.send(DOM);
+                    var newText = DOM.createAttribute("text");
+                    newText.nodeValue = escapeHtml(outgoing[i]);
+                    node.setAttributeNode(newText);
+                    batch[0].appendChild(node);
                 }
-			}
-            
-            function createRoom(){
-                var x = document.getElementById("mySelect");
-                var option = document.createElement("option");
-                option.text = document.getElementById("addition").value;
-                x.add(option);
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function(){
+                    if(this.readyState == 4 && this.status == 200){
+                        var response = this.responseXML;
+                        for(var i = 0; i < response.getElementsByTagName('message').length; i++){
+                            document.getElementById("room").innerHTML +=
+                            response.getElementsByTagName('message')[i].childNodes[0].nodeValue + '<br>';
+                        }
+                        revision = response.getElementsByTagName('id')[0].childNodes[0].nodeValue;
+                    }
+                }
+                xhttp.open("POST", "update", true);
+                xhttp.setRequestHeader("Content-type" , "application/xml");
+                xhttp.send(DOM);
+                outgoing = []
             }
-            
-		</script>
-	</head>
-	<body>
-		<h1 align="center"><b> PyChat </b></h1><br/>
-		<div id="room" style="height:400px;width:800px;border:1px solid #ccc;font:16px/26px Georgia, Garamond, Serif;overflow:auto;"></div><br/>
-		<form  autocomplete='off' onsubmit='return sendMessage()' autofocus>
-		<form onsubmit='return sendMessage()'>
-		<select id='rooms'>
-			<option value="1">general</option>
-		</select><br/>
-		Enter your message: <input id='message'><input type="submit" value="Send"><br/>
-		</form>
-        <form onsubmit='return createRoom()'>
-        Create new room: <input id='addition'><input type="submit" value="Create"><br/>
+
+            function newMessage(){
+                if(document.getElementById("message").value != ''){
+                    outgoing.push(document.getElementById("message").value);
+                }
+                document.getElementById("message").value = "";
+                return false;
+            }
+
+            <!-- function sendMessage(){ -->
+                <!-- to_update = false; -->
+                <!-- clearInterval(repeater); -->
+                <!-- var base = '<root></root>'; -->
+                <!-- var parser = new DOMParser(); -->
+                <!-- var DOM = parser.parseFromString(base, "text/xml"); -->
+                <!-- var node = DOM.createElement("message"); -->
+                <!-- var newText = DOM.createAttribute("text"); -->
+                <!-- var newRev = DOM.createAttribute("revision"); -->
+                <!-- newText.nodeValue = escapeHtml(document.getElementById("message").value); -->
+                <!-- newRev.nodeValue = revision; -->
+                <!-- node.setAttributeNode(newText); -->
+                <!-- node.setAttributeNode(newRev); -->
+                <!-- var elements = DOM.getElementsByTagName("root"); -->
+                <!-- elements[0].appendChild(node); -->
+                <!-- var xhttp = new XMLHttpRequest(); -->
+                <!-- xhttp.onreadystatechange = function(){ -->
+                    <!-- if(this.readyState == 4 && this.status == 200){ -->
+                        <!-- var response = this.responseXML; -->
+                        <!-- for(var i = 0; i < response.getElementsByTagName('message').length; i++){ -->
+                            <!-- document.getElementById("room").innerHTML += -->
+                            <!-- response.getElementsByTagName('message')[i].childNodes[0].nodeValue + '<br>'; -->
+                        <!-- } -->
+                        <!-- revision = response.getElementsByTagName('revision')[0].childNodes[0].nodeValue; -->
+                        <!-- repeater = setInterval(updateMessages, 1000); -->
+                        <!-- to_update = true; -->
+                    <!-- } -->
+                <!-- } -->
+                <!-- xhttp.open("POST", "update", true); -->
+                <!-- xhttp.setRequestHeader("Content-type" , "application/xml"); -->
+                <!-- xhttp.send(DOM); -->
+                <!-- document.getElementById("message").value = ""; -->
+                <!-- return false; -->
+            <!-- } -->
+
+            <!-- function updateMessages(){ -->
+                <!-- if(to_update){ -->
+                    <!-- var base = '<root></root>'; -->
+                    <!-- var parser = new DOMParser(); -->
+                    <!-- var DOM = parser.parseFromString(base, "text/xml"); -->
+                    <!-- var node = DOM.createElement("message"); -->
+                    <!-- var newRev = DOM.createAttribute("revision"); -->
+                    <!-- newRev.nodeValue = revision; -->
+                    <!-- node.setAttributeNode(newRev); -->
+                    <!-- var elements = DOM.getElementsByTagName("root"); -->
+                    <!-- elements[0].appendChild(node); -->
+                    <!-- var xhttp = new XMLHttpRequest(); -->
+                    <!-- xhttp.onreadystatechange = function() { -->
+                        <!-- if(this.readyState == 4 && this.status == 200){ -->
+                            <!-- var response = this.responseXML; -->
+                            <!-- for(var i = 0; i < response.getElementsByTagName('message').length; i++){ -->
+                                <!-- document.getElementById("room").innerHTML += -->
+                                <!-- response.getElementsByTagName('message')[i].childNodes[0].nodeValue + '<br>'; -->
+                            <!-- } -->
+                            <!-- if(!( response.getElementsByTagName('revision').length == 0 )){ -->
+                                <!-- revision = response.getElementsByTagName('revision')[0].childNodes[0].nodeValue; -->
+                            <!-- } -->
+                        <!-- } -->
+                    <!-- } -->
+                    <!-- xhttp.open("POST", "update", true); -->
+                    <!-- xhttp.setRequestHeader("Content-type" , "application/xml"); -->
+                    <!-- xhttp.send(DOM); -->
+                <!-- } -->
+            <!-- } -->
+
+        </script>
+    </head>
+    <body>
+        <h1 align="center"><b> PyChat </b></h1><br/>
+        <div id="room" style="height:400px;width:800px;border:1px solid #ccc;font:16px/26px Georgia, Garamond, Serif;overflow:auto;"></div><br/>
+        <form  autocomplete='off' onsubmit='return newMessage()' autofocus>
+        Enter your message: <input id='message'><input type="submit" value="Send"><br/>
         </form>
-	</body>
+    </body>
 </html>

@@ -201,21 +201,25 @@ class Update(base.Base, Service):
         c = Cookie.SimpleCookie()
         c.load(str(dialogue['request']['headers']['Cookie']))
         root = et.fromstring(dialogue['request']['content'])
+        messages = root.findall('messages')
         try:
-            dialogue['request']['context']['rooms']['room'].append('%s: %s' % (dialogue['request']['context']['users'][c['uid'].value], root[0].attrib['text']))
-        except Exception as e:
+            for message in messages[0].findall('message'):
+                dialogue['request']['context']['rooms']['room'].append('%s: %s' % (dialogue['request']['context']['users'][c['uid'].value], message.attrib['text']))
+        except KeyError as e:
             pass
 
     def response_headers(self, dialogue):
         c = Cookie.SimpleCookie()
         c.load(str(dialogue['request']['headers']['Cookie']))
         root = et.fromstring(dialogue['request']['content'])
-        messages = util.get_revision(dialogue['request']['context']['rooms']['room'], int(root[0].attrib['revision']))
+        for child in root:
+            print child.tag, child.attrib
+        messages = util.get_revision(dialogue['request']['context']['rooms']['room'], int(root.findall('fetch')[0].attrib['id']))
         root = et.Element('root')
         for entry in messages:
             et.SubElement(root, 'message').text = entry
         if messages:
-            et.SubElement(root, 'revision').text = '%s' % (len(dialogue['request']['context']['rooms']['room']))
+            et.SubElement(root, 'id').text = '%s' % (len(dialogue['request']['context']['rooms']['room']))
         self.logger.debug('HERE BE THE MESSAGES: %s', et.tostring(root))
         self.content = et.tostring(root)
         dialogue['response']['headers']['Content-Length'] = len(self.content)
@@ -259,7 +263,7 @@ class Home(base.Base, Service):
             dialogue['response']['headers']['Content-Length'] = os.fstat(self.resource.fileno()).st_size
             dialogue['response']['headers']['Content-Type'] = 'text/html'
         else:
-            dialogue['response']['headers']['Refresh'] = '0; url=http://localhost:8080/chat'
+            dialogue['response']['headers']['Refresh'] = '0; url=/chat'
 
     def response_content(self, dialogue):
         if not dialogue['request']['headers']['Cookie']:
@@ -299,5 +303,20 @@ class Login(base.Base, Service):
         c['uid'] = util.generate_unique(dialogue['request']['context']['users'].keys())
         dialogue['request']['context']['users'][c['uid'].value] = dialogue['request']['params']['name'][0]
         dialogue['response']['headers']['Set-Cookie'] = '%s=%s' % (c['uid'].key, c['uid'].value)
-        dialogue['response']['headers']['Refresh'] = '0; url=http://localhost:8080/chat'
+        dialogue['response']['headers']['Refresh'] = '0; url=/chat'
+
+class Rooms(base.Base, Service):
+
+    NAME = '/rooms'
+
+    def __init__(
+        self,
+    ):
+        super(Login, self).__init__()
+        Service.__init__(self)
+        self._resource = None
+        self._content = ''
+
+    
+
 
