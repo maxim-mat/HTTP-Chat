@@ -8,6 +8,9 @@
             var to_update = true;
             var outgoing = [];
             var flush = setInterval(flushMessages, 1000);
+            var updateUsers = setInterval(getUsers, 2000);
+            var query = window.location.search;
+            var roomName = query.slice(query.indexOf('=') + 1);
 
             function escapeHtml(unsafe) {
                 return unsafe
@@ -29,6 +32,11 @@
                 var id = DOM.createAttribute("id");
                 id.nodeValue = revision;
                 fetch.setAttributeNode(id);
+                var room = DOM.createElement("room");
+                elements[0].appendChild(room);
+                var nameAttrib = DOM.createAttribute("name");
+                nameAttrib.nodeValue = escapeHtml(roomName);
+                room.setAttributeNode(nameAttrib);
                 elements[0].appendChild(batch);
                 batch = DOM.getElementsByTagName("messages");
                 for(var i = 0; i < outgoing.length; i++){
@@ -43,7 +51,7 @@
                     if(this.readyState == 4 && this.status == 200){
                         var response = this.responseXML;
                         for(var i = 0; i < response.getElementsByTagName('message').length; i++){
-                            document.getElementById("room").innerHTML +=
+                            document.getElementById("chatScroll").innerHTML +=
                             response.getElementsByTagName('message')[i].childNodes[0].nodeValue + '<br>';
                         }
                         revision = response.getElementsByTagName('id')[0].childNodes[0].nodeValue;
@@ -61,6 +69,32 @@
                 }
                 document.getElementById("message").value = "";
                 return false;
+            }
+            
+            function getUsers(){
+                var base = '<root></root>';
+                var parser = new DOMParser();
+                var DOM = parser.parseFromString(base, "text/xml");
+                var elements = DOM.getElementsByTagName("root");
+                var room = DOM.createElement("room");
+                elements[0].appendChild(room);
+                var nameAttrib = DOM.createAttribute("name");
+                nameAttrib.nodeValue = escapeHtml(roomName);
+                room.setAttributeNode(nameAttrib);
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function(){
+                    if(this.readyState == 4 && this.status == 200){
+                        var users = ''
+                        var response = this.responseXML;
+                        for(var i = 0; i < response.getElementsByTagName('user').length; i++){
+                            users += response.getElementsByTagName('user')[i].childNodes[0].nodeValue + '<br>';
+                        }
+                        document.getElementById("usersScroll").innerHTML = users;
+                    }
+                }
+                xhttp.open("POST", "users", true);
+                xhttp.setRequestHeader("Content-type" , "application/xml");
+                xhttp.send(DOM);
             }
 
             <!-- function sendMessage(){ -->
@@ -132,7 +166,9 @@
     </head>
     <body>
         <h1 align="center"><b> PyChat </b></h1><br/>
-        <div id="room" style="height:400px;width:800px;border:1px solid #ccc;font:16px/26px Georgia, Garamond, Serif;overflow:auto;"></div><br/>
+        <div id="chatScroll" style="height:400px;width:800px;border:1px solid #ccc;font:16px/26px Georgia, Garamond, Serif;overflow:auto;"></div>
+        <h3> Connected Users: </h3>
+        <div id="usersScroll" style="height:300px;width:200px;border:1px solid #ccc; font:16px/26px Georgia, Garamond, Serif;overflow:auto;"></div><br>
         <form  autocomplete='off' onsubmit='return newMessage()' autofocus>
         Enter your message: <input id='message'><input type="submit" value="Send"><br/>
         </form>

@@ -70,11 +70,6 @@ class Server(base.Base):
         poller = self.poll_type()
         for s in self._pollable:
             poller.register(s.getfd(), s.getevents())
-            self.logger.debug(
-                'socket %s was registered with events: %s',
-                s.getfd(),
-                s.getevents(),
-            )
         return poller
 
     def _get_socket(self, fd):
@@ -83,15 +78,13 @@ class Server(base.Base):
                 return s
 
     def _close_socket(self, s):
-        self.logger.debug('POLLABLE: %s', self._pollable)
         self.logger.debug('closed socket: %s', s.getfd())
         self._pollable.remove(s)
         s.socket.close()
-        self.logger.debug('POLLABLE: %s', self._pollable)
 
     def run(self):
         while self._pollable:
-            self.logger.debug('pollable list: %s', self._pollable)
+            self.logger.debug('currently handling %s connctions', len(self._pollable))
             try:
                 # if self._close_server:
                     # self._terminate()
@@ -99,15 +92,8 @@ class Server(base.Base):
                     # if s.state == Http_socket.CLOSING:
                         # self._remove_socket(s)
                 try:
-                    self.logger.debug('start polling')
                     for fd, e in self._create_poller().poll(self.timeout):
-                        self.logger.debug(
-                            'socket fd: %s, event: %s',
-                            fd,
-                            e,
-                        )
                         socket = self._get_socket(fd)
-                        self.logger.debug('%s is %s', fd, socket)
                         try:
                             if (
                                 e &
@@ -231,7 +217,7 @@ def main():
                 
             },
             'rooms':{
-                'room':[],
+                
             },
         }
 
