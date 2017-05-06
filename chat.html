@@ -8,7 +8,7 @@
             var to_update = true;
             var outgoing = [];
             var flush = setInterval(flushMessages, 1000);
-            var updateUsers = setInterval(getUsers, 2000);
+            //var updateUsers = setInterval(getUsers, 2000);
             var query = window.location.search;
             var roomName = query.slice(query.indexOf('=') + 1);
 
@@ -35,7 +35,7 @@
                 var room = DOM.createElement("room");
                 elements[0].appendChild(room);
                 var nameAttrib = DOM.createAttribute("name");
-                nameAttrib.nodeValue = escapeHtml(roomName);
+                nameAttrib.nodeValue = roomName;
                 room.setAttributeNode(nameAttrib);
                 elements[0].appendChild(batch);
                 batch = DOM.getElementsByTagName("messages");
@@ -49,11 +49,16 @@
                 var xhttp = new XMLHttpRequest();
                 xhttp.onreadystatechange = function(){
                     if(this.readyState == 4 && this.status == 200){
+                        var users = '';
                         var response = this.responseXML;
                         for(var i = 0; i < response.getElementsByTagName('message').length; i++){
                             document.getElementById("chatScroll").innerHTML +=
                             response.getElementsByTagName('message')[i].childNodes[0].nodeValue + '<br>';
                         }
+                        for(var i = 0; i < response.getElementsByTagName('user').length; i++){
+                            users += response.getElementsByTagName('user')[i].childNodes[0].nodeValue + '<br>';
+                        }
+                        document.getElementById("usersScroll").innerHTML = users;
                         revision = response.getElementsByTagName('id')[0].childNodes[0].nodeValue;
                     }
                 }
@@ -84,7 +89,7 @@
                 var xhttp = new XMLHttpRequest();
                 xhttp.onreadystatechange = function(){
                     if(this.readyState == 4 && this.status == 200){
-                        var users = ''
+                        var users = '';
                         var response = this.responseXML;
                         for(var i = 0; i < response.getElementsByTagName('user').length; i++){
                             users += response.getElementsByTagName('user')[i].childNodes[0].nodeValue + '<br>';

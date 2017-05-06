@@ -134,7 +134,6 @@ class Chat(base.Base, Service):
         c.load(str(dialogue['request']['headers']['Cookie']))
         room = dialogue['request']['params']['room'][0]
         username = dialogue['request']['context']['users'][c['uid'].value]
-        util.clear_outdated_users(dialogue['request']['context']['rooms'][room]['users'])
         dialogue['request']['context']['rooms'][room]['users'][username] = time.time()
         self.logger.debug("USERS %s", dialogue['request']['context']['rooms'][room]['users'])
 
@@ -189,10 +188,15 @@ class Update(base.Base, Service):
         room = root.findall('room')[0].attrib['name']
         messages = util.get_revision(dialogue['request']['context']['rooms'][room]['messages'], int(root.findall('fetch')[0].attrib['id']))
         root = et.Element('root')
+        et.SubElement(root, 'messages')
         for entry in messages:
-            et.SubElement(root, 'message').text = entry
+            et.SubElement(root[0], 'message').text = entry
         if messages:
             et.SubElement(root, 'id').text = '%s' % (len(dialogue['request']['context']['rooms'][room]['messages']))
+        et.SubElement(root, 'users')
+        util.clear_outdated_users(dialogue['request']['context']['rooms'][room]['users'])
+        for name in dialogue['request']['context']['rooms'][room]['users'].keys():
+            et.SubElement(root[1], 'user').text = name
         self.logger.debug('HERE BE THE MESSAGES: %s', et.tostring(root))
         self.content = et.tostring(root)
         dialogue['response']['headers']['Content-Length'] = len(self.content)

@@ -24,7 +24,7 @@ def clear_outdated_users(users):
 
     ''' Clear all outdated users from a room '''
     ''' A user is defined as outdated if it hasn't sent a message within a certain period '''
-    ''' users is a dicts of a rooms users with timestamp (float, in seconds) at last activity as values '''
+    ''' users is a dict of a room's users with timestamp (float, in seconds) at last activity as values '''
 
     now = time.time()
     for user, timestamp in users.items():
