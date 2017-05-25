@@ -2,12 +2,68 @@
 <html>
 	<head>
 		<title> Rooms </title>
+        <style>
+        
+            body{
+                background-color: #00FFFF;
+                text-align: center;
+            }
+            
+            h1{
+                font-family: Georgia;
+            }
+            
+            .btn-grp .button{
+                padding: 15px 32px;
+                background-color: #008000;
+                border: none;
+                color: #92CD00;
+                text-align: center;
+                font-size: 16px;
+                -webkit-transition-duration: 0.4s;
+                transition-duration: 0.4s;
+                margin: 4px 2px;
+                cursor: pointer;
+            }
+            
+            .btn-grp .button:hover{
+                box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
+            }
+            
+            #roomInput{
+                width: 500px;
+                height: 21px;
+                font: 16px/26px Georgia, Garamond, Serif;
+                margin: 20px 5px;
+            }
+            
+            .input{
+                height: 27px;
+                width: 100px;
+                background-color: #008000;
+                border: none;
+                color: #92CD00;
+                text-align: center;
+                font-size: 18px;
+                margin: 4px 2px;
+                -webkit-transition-duration: 0.4s;
+                transition-duration: 0.4s;
+                border-radius: 16px;
+                cursor: pointer;
+            }
+            
+            .input:hover{
+                background-color: #ADFF2F;
+                color: #008000;
+            }
+            
+        </style>
 		<script>
 			
 			var update = setInterval(getRooms, 1000);
             var currentRooms = [];
 			
-			function escapeHtml(unsafe) {
+			function escapeHtml(unsafe){
                 return unsafe
                      .replace(/&/g, "&amp;")
                      .replace(/</g, "&lt;")
@@ -15,6 +71,15 @@
                      .replace(/"/g, "&quot;")
                      .replace(/'/g, "&#039;");
             }
+			
+			function restore(altered){
+				return altered
+                     .replace("&amp;", "&")
+                     .replace("&lt;", "<")
+                     .replace("&gt;", ">")
+					 .replace("&quot;", '"')
+					 .replace("&#039;", "'");
+			}
 			
 			function newRoom(){
                 if(currentRooms.indexOf(document.getElementById("roomInput").value) === -1){
@@ -25,7 +90,7 @@
                     var room = DOM.createElement("room");
                     var id = DOM.createAttribute("name");
                     var elements = DOM.getElementsByTagName("root");
-                    id.nodeValue = escapeHtml(document.getElementById("roomInput").value);
+                    id.nodeValue = document.getElementById("roomInput").value;
                     room.setAttributeNode(id);
                     elements[0].appendChild(room);
                     var xhttp = new XMLHttpRequest();
@@ -44,7 +109,7 @@
                         rooms = ''
                         var response = this.responseXML;
                             for(var i = 0; i < response.getElementsByTagName('room').length; i++){
-                                rooms += '<button type="button" onclick="enterRoom(this.innerHTML)">' + response.getElementsByTagName('room')[i].childNodes[0].nodeValue + '</button><br>';
+                                rooms += '<button class="button" type="button" onclick="enterRoom(this.innerHTML)">' + escapeHtml(response.getElementsByTagName('room')[i].childNodes[0].nodeValue) + '</button><br>';
                             }
                         document.getElementById('rooms').innerHTML = rooms;
                     }
@@ -54,16 +119,21 @@
 			}
             
             function enterRoom(name){
-                window.open('/chat?room=$'.replace('$', name));
+                window.open('/chat?room=$'.replace('$', encodeURIComponent(restore(name))));
             }
 			
 		</script>
 	</head>
 	<body>
 		<h1 align="center"><b> PyChat </b></h1><br/>
-		<div id='rooms'></div><br>
+		<div id='rooms' class="btn-grp">
+            <button class="button">button</button></br>
+            <button class="button">button</button></br>
+            <button class="button">button</button></br>
+            <button class="button">button</button></br>
+        </div>
 		<form autocomplete='off' onsubmit='return newRoom()'>
-			<input id='roomInput' name='name'><input type='submit' value='new room'>
+			<input id='roomInput' name='name' maxlength="50" autofocus><input class="input" type='submit' value='add room'>
 		</form>
 	</body>
 </html>

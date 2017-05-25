@@ -2,17 +2,83 @@
 <html>
     <head>
         <title> PyChat </title>
+        <style>
+
+            body {
+                background-color: #00FFFF;
+                text-align: center;
+            }
+
+            table{
+                width:80%;
+                margin-left: auto;
+                margin-right: auto;
+                margin-top: 20px;
+            }
+
+            p{
+                font: 24px/34px Georgia, Garamond, Serif;
+            }
+
+            #button{
+                height: 27px;
+                width: 100px;
+                background-color: #008000;
+                border: none;
+                color: #92CD00;
+                text-align: center;
+                font-size: 18px;
+                margin: 4px 2px;
+                -webkit-transition-duration: 0.4s;
+                transition-duration: 0.4s;
+                border-radius: 16px;
+                cursor: pointer;
+            }
+
+            #button:hover{
+                background-color: #ADFF2F;
+                color: #008000;
+            }
+
+            #message{
+                width: 500px;
+                height: 21px;
+                font: 16px/26px Georgia, Garamond, Serif;
+            }
+
+            #chatScroll{
+                width: 1500px;
+                height: 600px;
+                border: 3px solid black;
+                font: 18px/26px Georgia, Garamond, Serif;
+                overflow: auto;
+                text-align: left;
+            }
+
+            #usersScroll{
+                float: left;
+                width: 300px;
+                height: 600px;
+                border: 3px solid black;
+                font: 18px/26px Georgia, Garamond, Serif;
+                overflow: auto;
+            }
+
+        </style>
         <script>
 
             var revision = '0';
             var to_update = true;
             var outgoing = [];
             var flush = setInterval(flushMessages, 1000);
-            //var updateUsers = setInterval(getUsers, 2000);
             var query = window.location.search;
-            var roomName = query.slice(query.indexOf('=') + 1);
+            var roomName = decodeURIComponent(query.slice(query.indexOf('=') + 1));
 
-            function escapeHtml(unsafe) {
+			function load(){
+				document.getElementById("roomTitle").innerHTML = escapeHtml(roomName);
+			}
+
+            function escapeHtml(unsafe){
                 return unsafe
                      .replace(/&/g, "&amp;")
                      .replace(/</g, "&lt;")
@@ -75,107 +141,23 @@
                 document.getElementById("message").value = "";
                 return false;
             }
-            
-            function getUsers(){
-                var base = '<root></root>';
-                var parser = new DOMParser();
-                var DOM = parser.parseFromString(base, "text/xml");
-                var elements = DOM.getElementsByTagName("root");
-                var room = DOM.createElement("room");
-                elements[0].appendChild(room);
-                var nameAttrib = DOM.createAttribute("name");
-                nameAttrib.nodeValue = escapeHtml(roomName);
-                room.setAttributeNode(nameAttrib);
-                var xhttp = new XMLHttpRequest();
-                xhttp.onreadystatechange = function(){
-                    if(this.readyState == 4 && this.status == 200){
-                        var users = '';
-                        var response = this.responseXML;
-                        for(var i = 0; i < response.getElementsByTagName('user').length; i++){
-                            users += response.getElementsByTagName('user')[i].childNodes[0].nodeValue + '<br>';
-                        }
-                        document.getElementById("usersScroll").innerHTML = users;
-                    }
-                }
-                xhttp.open("POST", "users", true);
-                xhttp.setRequestHeader("Content-type" , "application/xml");
-                xhttp.send(DOM);
-            }
-
-            <!-- function sendMessage(){ -->
-                <!-- to_update = false; -->
-                <!-- clearInterval(repeater); -->
-                <!-- var base = '<root></root>'; -->
-                <!-- var parser = new DOMParser(); -->
-                <!-- var DOM = parser.parseFromString(base, "text/xml"); -->
-                <!-- var node = DOM.createElement("message"); -->
-                <!-- var newText = DOM.createAttribute("text"); -->
-                <!-- var newRev = DOM.createAttribute("revision"); -->
-                <!-- newText.nodeValue = escapeHtml(document.getElementById("message").value); -->
-                <!-- newRev.nodeValue = revision; -->
-                <!-- node.setAttributeNode(newText); -->
-                <!-- node.setAttributeNode(newRev); -->
-                <!-- var elements = DOM.getElementsByTagName("root"); -->
-                <!-- elements[0].appendChild(node); -->
-                <!-- var xhttp = new XMLHttpRequest(); -->
-                <!-- xhttp.onreadystatechange = function(){ -->
-                    <!-- if(this.readyState == 4 && this.status == 200){ -->
-                        <!-- var response = this.responseXML; -->
-                        <!-- for(var i = 0; i < response.getElementsByTagName('message').length; i++){ -->
-                            <!-- document.getElementById("room").innerHTML += -->
-                            <!-- response.getElementsByTagName('message')[i].childNodes[0].nodeValue + '<br>'; -->
-                        <!-- } -->
-                        <!-- revision = response.getElementsByTagName('revision')[0].childNodes[0].nodeValue; -->
-                        <!-- repeater = setInterval(updateMessages, 1000); -->
-                        <!-- to_update = true; -->
-                    <!-- } -->
-                <!-- } -->
-                <!-- xhttp.open("POST", "update", true); -->
-                <!-- xhttp.setRequestHeader("Content-type" , "application/xml"); -->
-                <!-- xhttp.send(DOM); -->
-                <!-- document.getElementById("message").value = ""; -->
-                <!-- return false; -->
-            <!-- } -->
-
-            <!-- function updateMessages(){ -->
-                <!-- if(to_update){ -->
-                    <!-- var base = '<root></root>'; -->
-                    <!-- var parser = new DOMParser(); -->
-                    <!-- var DOM = parser.parseFromString(base, "text/xml"); -->
-                    <!-- var node = DOM.createElement("message"); -->
-                    <!-- var newRev = DOM.createAttribute("revision"); -->
-                    <!-- newRev.nodeValue = revision; -->
-                    <!-- node.setAttributeNode(newRev); -->
-                    <!-- var elements = DOM.getElementsByTagName("root"); -->
-                    <!-- elements[0].appendChild(node); -->
-                    <!-- var xhttp = new XMLHttpRequest(); -->
-                    <!-- xhttp.onreadystatechange = function() { -->
-                        <!-- if(this.readyState == 4 && this.status == 200){ -->
-                            <!-- var response = this.responseXML; -->
-                            <!-- for(var i = 0; i < response.getElementsByTagName('message').length; i++){ -->
-                                <!-- document.getElementById("room").innerHTML += -->
-                                <!-- response.getElementsByTagName('message')[i].childNodes[0].nodeValue + '<br>'; -->
-                            <!-- } -->
-                            <!-- if(!( response.getElementsByTagName('revision').length == 0 )){ -->
-                                <!-- revision = response.getElementsByTagName('revision')[0].childNodes[0].nodeValue; -->
-                            <!-- } -->
-                        <!-- } -->
-                    <!-- } -->
-                    <!-- xhttp.open("POST", "update", true); -->
-                    <!-- xhttp.setRequestHeader("Content-type" , "application/xml"); -->
-                    <!-- xhttp.send(DOM); -->
-                <!-- } -->
-            <!-- } -->
 
         </script>
     </head>
-    <body>
-        <h1 align="center"><b> PyChat </b></h1><br/>
-        <div id="chatScroll" style="height:400px;width:800px;border:1px solid #ccc;font:16px/26px Georgia, Garamond, Serif;overflow:auto;"></div>
-        <h3> Connected Users: </h3>
-        <div id="usersScroll" style="height:300px;width:200px;border:1px solid #ccc; font:16px/26px Georgia, Garamond, Serif;overflow:auto;"></div><br>
-        <form  autocomplete='off' onsubmit='return newMessage()' autofocus>
-        Enter your message: <input id='message'><input type="submit" value="Send"><br/>
+    <body onload='load()'>
+        <h1 id="roomTitle"><b> asdlgnaldf;nldfagnl;dafj </b></h1>
+        <table>
+            <tr>
+                <td>
+                    <div id="usersScroll"></div>
+                </td>
+                <td>
+                    <div id="chatScroll"></div>
+                </td>
+            </tr>
+        </table>
+        <form id="messageInput" autocomplete='off' onsubmit='return newMessage()'>
+        <p> Enter your message: <input id='message' maxlength="150" autofocus><input id="button" type="submit" value="Send"> </p>
         </form>
     </body>
 </html>

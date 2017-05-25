@@ -177,16 +177,22 @@ class Update(base.Base, Service):
         root = et.fromstring(dialogue['request']['content'])
         messages = root.findall('messages')
         room = root.findall('room')[0].attrib['name']
+        appendee = []
         for message in messages[0].findall('message'):
-            dialogue['request']['context']['rooms'][room]['users'][dialogue['request']['context']['users'][c['uid'].value]] = time.time()
-            dialogue['request']['context']['rooms'][room]['messages'].append('%s: %s' % (dialogue['request']['context']['users'][c['uid'].value], message.attrib['text']))
+            appendee.append('%s: %s' % (dialogue['request']['context']['users'][c['uid'].value], message.attrib['text']))
+        if len(appendee) > 0:
+            dialogue['request']['context']['rooms'][room]['messages'].append(appendee)
+        dialogue['request']['context']['rooms'][room]['users'][dialogue['request']['context']['users'][c['uid'].value]] = time.time()
+        if len(dialogue['request']['context']['rooms'][room]['messages']) > constants.TOO_BIG:
+            dialogue['request']['context']['rooms'][room]['messages'] = dialogue['request']['context']['rooms'][room]['messages'][2:]
+            dialogue['request']['context']['rooms'][room]['base_index'] = 2
 
     def response_headers(self, dialogue):
         c = Cookie.SimpleCookie()
         c.load(str(dialogue['request']['headers']['Cookie']))
         root = et.fromstring(dialogue['request']['content'])
         room = root.findall('room')[0].attrib['name']
-        messages = util.get_revision(dialogue['request']['context']['rooms'][room]['messages'], int(root.findall('fetch')[0].attrib['id']))
+        messages = util.get_revision(dialogue['request']['context']['rooms'][room], int(root.findall('fetch')[0].attrib['id']))
         root = et.Element('root')
         et.SubElement(root, 'messages')
         for entry in messages:
@@ -330,7 +336,10 @@ class Append(base.Base, Service):
         dialogue['response']['code'] = '200'
         dialogue['response']['message'] = 'OK'
         root = et.fromstring(dialogue['request']['content'])
-        dialogue['request']['context']['rooms'][root[0].attrib['name']] = {'users':{}, 'messages': []}
+        dialogue['request']['context']['rooms'][root[0].attrib['name']] = {'users':{}, 'messages': [], 'base_index':0}
+        print 24*"="
+        print dialogue['request']['context']['rooms'].keys()
+        print 24*"="
 
 class Refresh(base.Base, Service):
 
@@ -359,43 +368,6 @@ class Refresh(base.Base, Service):
         root = et.Element('root')
         for room in dialogue['request']['context']['rooms'].keys():
             et.SubElement(root, 'room').text = room
-        self.content = et.tostring(root)
-        dialogue['response']['headers']['Content-Length'] = len(self.content)
-        dialogue['response']['headers']['Content-Type'] = 'text/xml'
-
-    def response_content(self, dialogue):
-        dialogue['response']['content'] = self.content
-        self.content = ''
-
-class Users(base.Base, Service):
-
-    NAME = '/users'
-
-    def __init__(
-        self,
-    ):
-        super(Users, self).__init__()
-        Service.__init__(self)
-        self._content = ''
-
-    @property
-    def content(self):
-        return self._content
-
-    @content.setter
-    def content(self, val):
-        self._content = val
-
-    def response_first_line(self, dialogue):
-        dialogue['response']['code'] = '200'
-        dialogue['response']['message'] = 'OK'
-
-    def response_headers(self, dialogue):
-        root = et.Element('root')
-        input = et.fromstring(dialogue['request']['content'])
-        room = input.findall('room')[0].attrib['name']
-        for name in dialogue['request']['context']['rooms'][room]['users'].keys():
-            et.SubElement(root, 'user').text = name
         self.content = et.tostring(root)
         dialogue['response']['headers']['Content-Length'] = len(self.content)
         dialogue['response']['headers']['Content-Type'] = 'text/xml'

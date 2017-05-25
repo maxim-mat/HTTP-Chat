@@ -3,12 +3,19 @@ import os
 import base64
 import time
 
-def get_revision(list, index):
+def get_revision(room, index):
 
-    if len(list) == 0 or len(list) <= index:
+    list = room['messages']
+    baseI = room['base_index']
+    messages = []
+    if len(list) == 0:
         return []
-    else:
-        return list[index:]
+    if len(list) < index:
+        index = index - baseI
+    for batch in list[index:]:
+        for message in batch:
+            messages.append(message)
+    return messages
 
 def generate_unique(excluded):
 

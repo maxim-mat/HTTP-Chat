@@ -2,6 +2,45 @@
 <html>
 	<head>
 		<title>	 Welcome ! </title>
+        <style>
+            
+            body{
+                background-color: #00FFFF;
+                text-align: center;
+            }
+            
+            p{
+                font-size: 64px;
+                font-family: Georgia;
+            }
+            
+            #registration{
+                height: 27px;
+                width: 100px;
+                background-color: #008000;
+                border: none;
+                color: #92CD00;
+                text-align: center;
+                font-size: 18px;
+                margin: 4px 2px;
+                -webkit-transition-duration: 0.4s;
+                transition-duration: 0.4s;
+                border-radius: 16px;
+                cursor: pointer;
+            }
+
+            #registration:hover{
+                background-color: #ADFF2F;
+                color: #008000;
+            }
+
+            #user{
+                width: 500px;
+                height: 21px;
+                font: 16px/26px Georgia, Garamond, Serif;
+            }
+            
+        </style>
 		<script>
 			
 			function escapeHtml(unsafe) {
@@ -20,9 +59,9 @@
 		</script>
 	</head>
 	<body>
-		<h1 align="center"><b>Welcome !</b></h1>
+		<p align="center"><b>Welcome !</b></p>
 		<form  autocomplete='off' action="/login" onsubmit='validate()'>
-            <input id='user' name='name'><input type='submit' value='register' />
+            <input id='user' name='name' maxlength="30"><input id="registration" type='submit' value='register' />
         </form>
 	</body>
 <html>
