@@ -94,7 +94,7 @@
                     room.setAttributeNode(id);
                     elements[0].appendChild(room);
                     var xhttp = new XMLHttpRequest();
-                    xhttp.open("POST", "append", true);
+                    xhttp.open("POST", "add-room", true);
                     xhttp.setRequestHeader("Content-type" , "application/xml");
                     xhttp.send(DOM);
                 }
@@ -109,12 +109,12 @@
                         rooms = ''
                         var response = this.responseXML;
                             for(var i = 0; i < response.getElementsByTagName('room').length; i++){
-                                rooms += '<button class="button" type="button" onclick="enterRoom(this.innerHTML)">' + escapeHtml(response.getElementsByTagName('room')[i].childNodes[0].nodeValue) + '</button><br>';
+                                rooms += '<button class="button" type="button" onclick="enterRoom(this.innerHTML)">' + escapeHtml(response.getElementsByTagName('room')[i].getAttributeNode('name').value) + '</button><br>';
                             }
                         document.getElementById('rooms').innerHTML = rooms;
                     }
 				}
-				xhttp.open('GET', 'refresh', true);
+				xhttp.open('GET', 'get-rooms', true);
 				xhttp.send();
 			}
             
@@ -127,10 +127,6 @@
 	<body>
 		<h1 align="center"><b> PyChat </b></h1><br/>
 		<div id='rooms' class="btn-grp">
-            <button class="button">button</button></br>
-            <button class="button">button</button></br>
-            <button class="button">button</button></br>
-            <button class="button">button</button></br>
         </div>
 		<form autocomplete='off' onsubmit='return newRoom()'>
 			<input id='roomInput' name='name' maxlength="50" autofocus><input class="input" type='submit' value='add room'>

@@ -1,11 +1,31 @@
-BLOCK_SIZE = 1024
-BUFFER_LIMIT = 8192
-TIMEOUT_DEFAULT = 10000
+## @package HTTP--Chat.constants Program constants.
+## @file constants.py Implementation of @ref HTTP--Chat.constants
+#
+
+## Max block size to read.
+BLOCK_SIZE = 8192
+
+## Characters indicating new line.
 CRLF = '\r\n'
+
+## Binary new line.
 CRLF_BIN = CRLF.encode('utf-8')
-MAX_HEADER_LEN = 4096
-MAX_HEADER_AMOUNT = 100
+
+## Time in seconds until a user is defined as inactive in a room.
+EXPIRED_PERIOD = 60 * 5
+
+## Communication protocol
 HTTP_SIGNATURE = 'HTTP/1.1'
-EXPIRED_PERIOD = 60*5
-TOO_BIG = 10 # let this constant be devisable by 10
-BOUNDARIES = (0, 100000)
+
+## Maximum header length.
+MAX_HEADER_LEN = 4096
+
+## Maximum header amount.
+MAX_HEADER_AMOUNT = 100
+
+## Time in seconds to sleep until I/O
+TIMEOUT_DEFAULT = 1000
+
+## Maximum message storage length.
+# upon reching this length old messages will be discarded when new ones arrive.
+TOO_BIG = 100

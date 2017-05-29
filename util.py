@@ -1,8 +1,18 @@
+## @package HTTP--Chat.util Utility module.
+## @file util.py Implementation of @ref HTTP--Chat.util
+#
+
+import base64
 import constants
 import os
-import base64
 import time
 
+
+## Get room revision since the last one.
+# @param room (dict) chat room.
+# @param index (int) previous revision index.
+# @returns (list) all messages since last revision.
+#
 def get_revision(room, index):
 
     list = room['messages']
@@ -17,21 +27,23 @@ def get_revision(room, index):
             messages.append(message)
     return messages
 
+
+## Generate unique random value.
+# @param excluded (iterable) blacklisted outputs.
+# @returns (str) generated random value
+#
 def generate_unique(excluded):
 
-    ''' Generate unique random number '''
-    ''' excluded is iterable with blacklisted outputs '''
-
     while True:
-        num = base64.b64encode(os.urandom(16))
-        if num not in excluded:
-            return num
+        val = base64.b64encode(os.urandom(16))
+        if val not in excluded:
+            return val
 
+
+## Clear all inactive users from room.
+# @param users (dict) room's users storage.
+#
 def clear_outdated_users(users):
-
-    ''' Clear all outdated users from a room '''
-    ''' A user is defined as outdated if it hasn't sent a message within a certain period '''
-    ''' users is a dict of a room's users with timestamp (float, in seconds) at last activity as values '''
 
     now = time.time()
     for user, timestamp in users.items():

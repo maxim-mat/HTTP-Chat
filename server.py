@@ -1,5 +1,9 @@
 #!usr/bin/python
 
+## @package HTTP--Chat.server Server module.
+## @file server.py Implementation of @ref HTTP--Chat.server
+#
+
 import argparse
 import base
 import constants
@@ -12,19 +16,29 @@ import signal
 import socket
 
 
+## Disconnect exception.
+#
+# Thrown when user disconnects spontaneously.
+#
 class Disconnect(RuntimeError):
-    """Exception for handling disconnects."""
 
     def __init__(self):
         super(Disconnect, self).__init__('Disconnect')
 
 
+## Server implementation.
+#
+# Handles poller loop.
+#
 class Server(base.Base):
-    """HTTP server object."""
 
-    _pollable = []  # list of pollable objects
-    _close_server = False
+    ## List of pollable I/O objects.
+    _pollable = []
 
+    ## Constructor.
+    # @param timeout (float) maximum time window for I/O.
+    # @param poll_type (object) poll logic, platform based.
+    #
     def __init__(
         self,
         timeout,
@@ -34,14 +48,20 @@ class Server(base.Base):
         self._timeout = timeout
         self._poll_type = poll_type
 
+    ## Retrive timeout.
     @property
     def timeout(self):
         return self._timeout
 
+    ## Retrive poll type.
     @property
     def poll_type(self):
         return self._poll_type
 
+    ## Add listener socket.
+    # @param bind_address (str) socket address
+    # @param bind_port (int) socket port
+    #
     def add_passive(
         self,
         bind_address,
@@ -58,46 +78,59 @@ class Server(base.Base):
             bind_port,
         )
 
+    ## Add I/O object to polling list.
+    # @param object (object) I/O entity to add
+    #
     def register(self, object):
         self._pollable.append(object)
         self.logger.debug('registered %s', object)
 
+    ## Remove I/O object from polling list.
+    # @param object (object) I/O entity to remove
+    #
     def unregister(self, object):
         self.logger.debug('removed %s', object)
         self._pollable.remove(object)
 
+    ## Create poller object.
+    # @returns poller object.
+    #
     def _create_poller(self):
         poller = self.poll_type()
         for s in self._pollable:
             poller.register(s.getfd(), s.getevents())
         return poller
 
+    ## Retrieve I/O object based on fd.
+    # @param fd (int) fd to match
+    # @returns (object) object matching fd
+    #
     def _get_socket(self, fd):
         for s in self._pollable:
             if s.getfd() == fd:
                 return s
 
-    def _close_socket(self, s):
-        self.logger.debug('closed socket: %s', s.getfd())
-        self._pollable.remove(s)
-        s.socket.close()
-
+    ## Polling loop.
+    #
+    # For each registered fd invokes methods appropriate to events.
+    #
     def run(self):
         while self._pollable:
-            self.logger.debug('currently handling %s connctions', len(self._pollable))
+            self.logger.debug(
+                'currently handling %s connctions',
+                len(self._pollable),
+            )
             try:
-                # if self._close_server:
-                    # self._terminate()
-                # for s in self._sockets:
-                    # if s.state == Http_socket.CLOSING:
-                        # self._remove_socket(s)
                 try:
                     for fd, e in self._create_poller().poll(self.timeout):
                         socket = self._get_socket(fd)
                         try:
                             if (
                                 e &
-                                (events.CommonEvents.POLLHUP | events.CommonEvents.POLLERR)
+                                (
+                                    events.CommonEvents.POLLHUP |
+                                    events.CommonEvents.POLLERR
+                                )
                             ):
                                 raise RuntimeError('Connection Broken')
                             if e & events.CommonEvents.POLLIN:
@@ -105,7 +138,10 @@ class Server(base.Base):
                             if e & events.CommonEvents.POLLOUT:
                                 socket.onwrite()
                         except Disconnect:
-                            self.logger.debug('Socket fd: %d has disconnected', fd)
+                            self.logger.debug(
+                                'Socket fd: %d has disconnected',
+                                fd,
+                            )
                             socket.onerror()
                         except Exception as ex:
                             self.logger.debug(
@@ -122,9 +158,11 @@ class Server(base.Base):
                     'Unexpected error: %s',
                     exc_info=True,
                 )
-                # self._terminate()
 
 
+## Parse program arguments. Make them easy to input and access.
+# @returns (dict) program arguments
+#
 def parse_args():
     """Parse program arguments."""
 
@@ -155,10 +193,10 @@ def parse_args():
     )
     parser.add_argument(
         '--new',
-        action='append',
-        required=True,
+        default="0.0.0.0:8080",
         help='''server to create. format is:
              [bind_address]:bind_port
+             default is %(default)s
              ''',
     )
     parser.add_argument(
@@ -186,6 +224,7 @@ def parse_args():
     return args
 
 
+## Main implementation.
 def main():
     """Main implementation."""
 
@@ -213,27 +252,33 @@ def main():
 
         response_context = {}
         request_context = {
-            'users':{
-                
+            'users': {
+
             },
-            'rooms':{
-                
+            'rooms': {
+
             },
         }
 
-        for a in args.new:
-            bind_addr, bind_port = a.split(':')
-            bind_port = int(bind_port)
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.bind((bind_addr, bind_port))
-            s.listen(10)
-            s.setblocking(False)
-            server.register(pollable.SocketListen(s, pollable.HttpSocket, server, request_context))
-            server.logger.debug(
-                'Created new listener socket %s:%s',
-                bind_addr,
-                bind_port,
+        bind_addr, bind_port = args.new.split(':')
+        bind_port = int(bind_port)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind((bind_addr, bind_port))
+        s.listen(10)
+        s.setblocking(False)
+        server.register(
+            pollable.SocketListen(
+                s,
+                pollable.HttpSocket,
+                server,
+                request_context,
             )
+        )
+        server.logger.debug(
+            'Created new listener socket %s:%s',
+            bind_addr,
+            bind_port,
+        )
 
         server.run()
 

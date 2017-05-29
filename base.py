@@ -1,19 +1,25 @@
-# -*- coding: utf-8 -*-
+## @package HTTP--Chat.base Base module.
+## @file base.py Implementation of @ref HTTP--Chat.base
+#
 
 import logging
 import sys
 
 
+## Base of all objects.
+#
 class Base(object):
-    """Base of all objects"""
 
+    ## Log prefix to use.
     LOG_PREFIX = 'my'
 
+    ## Logger.
     @property
     def logger(self):
         """Logger."""
         return self._logger
 
+    ## Constructor.
     def __init__(self):
         """Contructor."""
         self._logger = logging.getLogger(
@@ -23,27 +29,26 @@ class Base(object):
             ),
         )
 
+    ## Equality operator.
+    # @arg other (object) other object.
+    # @returns (bool) True if equal.
+    #
     def __eq__(self, other):
-        """Equality operator.
 
-        Python-2/python-3 bridge, python-2 has no __eq__ in object.
-
-        Args:
-            other (object): oter object.
-
-        Returns:
-            bool: True if equals.
-        """
         if type(self) is not type(other):
             return NotImplemented
 
         sup = super(Base, self)
-        if hasattr(sup, '__eq__'):  # python-3
+        # python-3
+        if hasattr(sup, '__eq__'):
             return sup.__eq__(other)
         else:
             return True
 
 
+## Setup logging system.
+# @returns (logger) program logger.
+#
 def setup_logging(stream=None, level=logging.INFO):
     logger = logging.getLogger(Base.LOG_PREFIX)
     logger.propagate = False
