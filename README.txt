@@ -8,3 +8,8 @@ in cmd or other terminal:
 
 cd [location of HTTP-Chat]
 python server.py
+
+
+Version 1.0.1
+
+fixed message duplication bug

@@ -68,11 +68,11 @@
         <script>
 
             var revision = '0';
-            var to_update = true;
             var outgoing = [];
             var flush = setInterval(flushMessages, 1000);
             var query = window.location.search;
             var roomName = decodeURIComponent(query.slice(query.indexOf('=') + 1));
+            var sendNext = true;
 
 			function load(){
 				document.getElementById("roomTitle").innerHTML = escapeHtml(roomName);
@@ -115,6 +115,7 @@
                 var xhttp = new XMLHttpRequest();
                 xhttp.onreadystatechange = function(){
                     if(this.readyState == 4 && this.status == 200){
+                        sendNext = true;
                         var users = '';
                         var response = this.responseXML;
                         for(var i = 0; i < response.getElementsByTagName('message').length; i++){
@@ -130,8 +131,11 @@
                 }
                 xhttp.open("POST", "get-messages", true);
                 xhttp.setRequestHeader("Content-type" , "application/xml");
-                xhttp.send(DOM);
-                outgoing = []
+                if(sendNext){
+                    xhttp.send(DOM);
+                }
+                outgoing = [];
+                sendNext = false;
             }
 
             function newMessage(){
