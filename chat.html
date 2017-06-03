@@ -114,8 +114,8 @@
                 }
                 var xhttp = new XMLHttpRequest();
                 xhttp.onreadystatechange = function(){
+                    sendNext = true;
                     if(this.readyState == 4 && this.status == 200){
-                        sendNext = true;
                         var users = '';
                         var response = this.responseXML;
                         for(var i = 0; i < response.getElementsByTagName('message').length; i++){
