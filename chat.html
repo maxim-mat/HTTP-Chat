@@ -114,20 +114,22 @@
                 }
                 var xhttp = new XMLHttpRequest();
                 xhttp.onreadystatechange = function(){
-                    sendNext = true;
-                    if(this.readyState == 4 && this.status == 200){
-                        var users = '';
-                        var response = this.responseXML;
-                        for(var i = 0; i < response.getElementsByTagName('message').length; i++){
-                            document.getElementById("chatScroll").innerHTML +=
-                            response.getElementsByTagName('message')[i].getAttributeNode('text').value + '<br>';
-                        }
-                        for(var i = 0; i < response.getElementsByTagName('user').length; i++){
-                            users += response.getElementsByTagName('user')[i].getAttributeNode('name').value + '<br>';
-                        }
-                        document.getElementById("usersScroll").innerHTML = users;
-                        revision = response.getElementsByTagName('id')[0].getAttributeNode('revision').value;
+                    if(this.readyState == 4){
+                        sendNext = true;
                     }
+                        if(this.status == 200){
+                            var users = '';
+                            var response = this.responseXML;
+                            for(var i = 0; i < response.getElementsByTagName('message').length; i++){
+                                document.getElementById("chatScroll").innerHTML +=
+                                response.getElementsByTagName('message')[i].getAttributeNode('text').value + '<br>';
+                            }
+                            for(var i = 0; i < response.getElementsByTagName('user').length; i++){
+                                users += response.getElementsByTagName('user')[i].getAttributeNode('name').value + '<br>';
+                            }
+                            document.getElementById("usersScroll").innerHTML = users;
+                            revision = response.getElementsByTagName('id')[0].getAttributeNode('revision').value;
+                        }
                 }
                 xhttp.open("POST", "get-messages", true);
                 xhttp.setRequestHeader("Content-type" , "application/xml");
