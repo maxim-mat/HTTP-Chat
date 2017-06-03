@@ -116,7 +116,6 @@
                 xhttp.onreadystatechange = function(){
                     if(this.readyState == 4){
                         sendNext = true;
-                    }
                         if(this.status == 200){
                             var users = '';
                             var response = this.responseXML;
@@ -130,6 +129,7 @@
                             document.getElementById("usersScroll").innerHTML = users;
                             revision = response.getElementsByTagName('id')[0].getAttributeNode('revision').value;
                         }
+                    }
                 }
                 xhttp.open("POST", "get-messages", true);
                 xhttp.setRequestHeader("Content-type" , "application/xml");
