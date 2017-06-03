@@ -46,6 +46,8 @@ class Pollable(base.Base):
         pass
 
 
+## New connections handler
+#
 class SocketListen(Pollable):
 
     ## Constructor.
@@ -114,6 +116,8 @@ class SocketListen(Pollable):
         self.socket.close()
 
 
+## HTTP request handler
+#
 class HttpSocket(Pollable):
 
     ## State machine states.
